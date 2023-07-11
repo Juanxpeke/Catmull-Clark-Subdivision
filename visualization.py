@@ -9,29 +9,36 @@ from implementation import *
 def main():
   parser = argparse.ArgumentParser()
   parser.add_argument("--file", type=str, default="Meshes/Geometry/cube.off", help="Nombre del archivo")
-  filename = parser.parse_args().file
+  parser.add_argument("--iter", type=int, default=1, help="Numero de iteraciones")
+
+  args = parser.parse_args()
+  filename = args.file
+  iterations = args.iter
 
   mesh = om.read_polymesh(filename)
-  new_mesh = catmull_clark(mesh)
+  new_mesh = catmull_clark_iter(mesh, iterations)
 
   ps.init()
-  ps_mesh_original = ps.register_surface_mesh(
+  _ = ps.register_surface_mesh(
     "mesh_original", 
     mesh.points(), 
     mesh.face_vertex_indices(),
-    transparency=0.5
+    transparency=0.5,
+    enabled=False
     )
   
-  ps_point_cloud = ps.register_point_cloud(
+  _ = ps.register_point_cloud(
     "point_cloud", 
     new_mesh.points(),
-    radius=0.01
+    radius=0.01,
+    enabled=False
     )
   
-  ps_new_mesh = ps.register_surface_mesh(
+  _ = ps.register_surface_mesh(
     "new_mesh",
     new_mesh.points(),
-    new_mesh.face_vertex_indices()
+    new_mesh.face_vertex_indices(),
+    edge_width=1,
   )
 
   ps.show()
