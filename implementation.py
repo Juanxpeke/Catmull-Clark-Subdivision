@@ -104,6 +104,7 @@ def catmull_clark(mesh):
   #iterador de vertices
   for v in mesh.vertices():
     esquina_vertex = calcular_esquinas(mesh, v, new_mesh_points)
+    
     #agregar el vertice a la nueva malla
     esquina_handle = new_mesh.add_vertex(esquina_vertex)
 
@@ -137,7 +138,7 @@ def catmull_clark(mesh):
       #agregar cara [WIP]
       
       
-      _ = new_mesh.add_face(esquina_handle, aricentro_handle, baricentro_f1_handle, baricentro_f2_handle)
+      _ = new_mesh.add_face([esquina_handle, aricentro_handle, baricentro_f1_handle, baricentro_f2_handle])
       
 
 

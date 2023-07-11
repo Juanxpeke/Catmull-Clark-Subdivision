@@ -12,6 +12,7 @@ def main():
   filename = parser.parse_args().file
 
   mesh = om.read_polymesh(filename)
+  new_mesh = catmull_clark(mesh)
 
   ps.init()
   ps_mesh_original = ps.register_surface_mesh(
@@ -23,9 +24,16 @@ def main():
   
   ps_point_cloud = ps.register_point_cloud(
     "point_cloud", 
-    catmull_clark(mesh).points(),
+    new_mesh.points(),
     radius=0.01
     )
+  
+  ps_new_mesh = ps.register_surface_mesh(
+    "new_mesh",
+    new_mesh.points(),
+    new_mesh.face_vertex_indices()
+  )
+
   ps.show()
 
 if __name__ == "__main__": main()
