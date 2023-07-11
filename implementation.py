@@ -104,7 +104,7 @@ def catmull_clark(mesh):
   #iterador de vertices
   for v in mesh.vertices():
     esquina_vertex = calcular_esquinas(mesh, v, new_mesh_points)
-    
+
     #agregar el vertice a la nueva malla
     esquina_handle = new_mesh.add_vertex(esquina_vertex)
 
@@ -123,6 +123,7 @@ def catmull_clark(mesh):
 
       aricentro_handle = new_mesh.vertex_handle(mesh.n_faces() + eh_index)
       last_aricentro_handle = new_mesh.vertex_handle(mesh.n_faces() + last_index)
+
       #caras adyacentes a la arista
       f1 = mesh.face_handle(he_handle)
       f2 = mesh.face_handle(mesh.opposite_halfedge_handle(he_handle))
@@ -132,16 +133,19 @@ def catmull_clark(mesh):
 
       baricentro_f1_handle = new_mesh.vertex_handle(f1.idx())
       baricentro_f2_handle = new_mesh.vertex_handle(f2.idx())
-      last_baricentro_f1_handle = new_mesh.vertex_handle(last_f1.idx())
-      last_baricentro_f2_handle = new_mesh.vertex_handle(last_f2.idx())
+
+      baricentro_common_handle = None
+      a1 = new_mesh.vertex_handle(last_f1.idx())
+      a2 = new_mesh.vertex_handle(last_f2.idx())
+      if a1 != baricentro_f1_handle and a1 != baricentro_f2_handle:
+        baricentro_common_handle = a2
+      else:
+        baricentro_common_handle = a1
 
       #agregar cara [WIP]
       
-      
-      _ = new_mesh.add_face([esquina_handle, aricentro_handle, baricentro_f1_handle, baricentro_f2_handle])
-      
-
-
+      _ = new_mesh.add_face([esquina_handle, aricentro_handle, baricentro_common_handle, last_aricentro_handle])
+    
       # [WIP]
       last_handle = eh
 
