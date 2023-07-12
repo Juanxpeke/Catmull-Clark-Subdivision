@@ -1,9 +1,7 @@
 
 import polyscope as ps
-import numpy as np
 import openmesh as om
 import argparse
-import os
 from implementation import *
 
 def main():
@@ -16,7 +14,7 @@ def main():
   iterations = args.iter
 
   mesh = om.read_polymesh(filename)
-  new_mesh = catmull_clark_iter2(mesh, iterations)
+  new_mesh = catmull_clark_iter(mesh, iterations)
 
   ps.init()
   _ = ps.register_surface_mesh(
