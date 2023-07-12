@@ -16,7 +16,7 @@ def main():
   iterations = args.iter
 
   mesh = om.read_polymesh(filename)
-  new_mesh = catmull_clark_iter(mesh, iterations)
+  new_mesh = catmull_clark_iter2(mesh, iterations)
 
   ps.init()
   _ = ps.register_surface_mesh(

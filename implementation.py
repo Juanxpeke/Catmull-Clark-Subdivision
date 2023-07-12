@@ -10,11 +10,11 @@ import polyscope as ps
 def calcular_baricentro(mesh, face):
   points = mesh.points()
   mean_vertex = np.array([0, 0, 0], dtype=float)
-  vertex_count = 0
+  vertex_count = 0.0
   #iterador de vertices de la cara
   for v in mesh.fv(face):
     mean_vertex += points[v.idx()]
-    vertex_count += 1
+    vertex_count += 1.0
 
   mean_vertex /= vertex_count
 
@@ -23,11 +23,12 @@ def calcular_baricentro(mesh, face):
 def calcular_aricentro(mesh, edge, new_mesh):
   points = mesh.points()
   new_mesh_points = new_mesh.points()
+  
+  he = mesh.halfedge_handle(edge, 0)
   mean_vertex = np.array([0, 0, 0], dtype=float)
   vertex_count = 0.0
 
-  he = mesh.halfedge_handle(edge, 0)
-  # detectar si la arista es no es frontera
+  # detectar si la arista no es frontera
   if not mesh.is_boundary(edge):
     #obtener caras adyacentes
     f1 = mesh.face_handle(he)
@@ -56,31 +57,43 @@ def calcular_esquinas(mesh, vertex, new_mesh):
   
   v_new = np.array([0, 0, 0], dtype=float)
   v_old = points[vertex.idx()]
-  edges_count = 0
-  faces_count = 0
+  edges_count = 0.0
+  faces_count = 0.0
 
-  edge_vertex = np.array([0, 0, 0], dtype=float)
-  #circulador de aristas
-  for eh in mesh.ve(vertex):
-    index = eh.idx()
-    aricentro = new_mesh_points[mesh.n_faces() + index]
-    edge_vertex += (aricentro - v_old)
-    edges_count += 1
-  edge_vertex /= np.power(edges_count, 2)
-
-  face_vertex = np.array([0, 0, 0], dtype=float)
-  #iterador de caras
-  for f in mesh.vf(vertex):
-    index = f.idx()
-    baricentro = new_mesh_points[index]
-    face_vertex += (baricentro - v_old)
-    faces_count += 1
-  
   if not mesh.is_boundary(vertex):
+    edge_vertex = np.array([0, 0, 0], dtype=float)
+    #circulador de aristas
+    for eh in mesh.ve(vertex):
+      index = eh.idx()
+      aricentro = new_mesh_points[mesh.n_faces() + index]
+      edge_vertex += (aricentro - v_old)
+      edges_count += 1.0
+
+    face_vertex = np.array([0, 0, 0], dtype=float)
+    #iterador de caras
+    for f in mesh.vf(vertex):
+      index = f.idx()
+      baricentro = new_mesh_points[index]
+      face_vertex += (baricentro - v_old)
+      faces_count += 1.0
+
+    edge_vertex /= np.power(edges_count, 2)
     face_vertex /= np.power(edges_count, 2)
-    v_new = (v_old + edge_vertex + face_vertex)
+
+    v_new = v_old + edge_vertex + face_vertex
+
   else:
-    v_new = v_old
+    edge_vertex = np.array([0, 0, 0], dtype=float)
+    #circulador de aristas frontera
+    for eh in mesh.ve(vertex):
+      if mesh.is_boundary(eh):
+        index = eh.idx()
+        aricentro = new_mesh_points[mesh.n_faces() + index]
+        edge_vertex += (aricentro - v_old)
+        edges_count += 1.0
+
+    edge_vertex /= np.power(edges_count, 2)
+    v_new = v_old + edge_vertex
 
   return v_new
 
@@ -212,7 +225,7 @@ def catmull_clark(mesh: openmesh.PolyMesh):
 
 def catmull_clark_iter(mesh: openmesh.PolyMesh, iterations: int):
   new_mesh = mesh
-  for i in range(iterations):
+  for _ in range(iterations):
     new_mesh = catmull_clark(new_mesh)
 
   return new_mesh
@@ -250,24 +263,31 @@ def catmull_clark2(mesh: openmesh.PolyMesh):
 
   for f in mesh.faces():
     baricentro = new_mesh.vertex_handle(f.idx())
-    #iterador de vertices de la cara
-    for v in mesh.fv(f):
+    
+    vertices = [vh for vh in mesh.fv(f)]
+    edges = [eh for eh in mesh.fe(f)]
+
+    # [WARNING] this is supposed to work mostly for quads, some weird stuff happens with triangles and borders sometimes
+    # EXAMPLE model airplane_0627 gets some weird holes which messes up the mesh for the following iterations
+    # but we'll let it slide for now using the range with len(edges) instead of 4
+    for i in range(len(edges)):
       esquina = new_mesh.vertex_handle(
-        n_faces + n_edges + v.idx()
+        n_faces + n_edges + vertices[i].idx()
       )
-      
-      # [TODO]
-      #obtener arista anterior y siguiente
-      #obtener aricentro anterior y siguiente
-      
-      #agregar cara
-      # [TODO]
+      aricentro_anterior = new_mesh.vertex_handle(
+        n_faces + edges[i].idx()
+      )
+      aricentro_siguiente = new_mesh.vertex_handle(
+        n_faces + edges[(i + 1) % len(edges)].idx()
+      )
+
+      _ = new_mesh.add_face([esquina, aricentro_anterior, baricentro, aricentro_siguiente])
 
   return new_mesh
 
 def catmull_clark_iter2(mesh: openmesh.PolyMesh, iterations: int):
   new_mesh = mesh
-  for i in range(iterations):
-    new_mesh = catmull_clark(new_mesh)
+  for _ in range(iterations):
+    new_mesh = catmull_clark2(new_mesh)
 
   return new_mesh
